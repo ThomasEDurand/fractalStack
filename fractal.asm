@@ -7,6 +7,7 @@
   redSquarePrompt:	.asciiz "Enter a RED color value for the squares (integer in range 0-255):\n"
   greenSquarePrompt:	.asciiz "Enter a GREEN color value for the squares (integer in range 0-255):\n"
   blueSquarePrompt:	.asciiz "Enter a BLUE color value for the squares (integer in range 0-255):\n"
+  shiftPrompt:	.asciiz "Enter a Value to shift the square color by (0-31):\n"
   sizePrompt:	.asciiz "Enter the width in pixels of the first square (Integer power of 2 in the set {1, 2, 4, 8, 16, 32, 64):\n"
   
 .text 0x00400000 ##!
@@ -88,6 +89,21 @@ readSquareColors:
 	or $t1, $s0, $s1
 	or $s7, $t1, $s2
 	
+readShift:
+	addi	$v0, $0, 4  			
+	la 	$a0, shiftPrompt 		
+	syscall           			
+	# read in the shift value
+	addi	$v0, $0, 5			
+	syscall 				
+ 	add	$s6, $0, $v0
+ 	add	$t0, $0, $s6
+ 	sll	$s6, $s6, 8
+ 	or	$s6, $s6, $t0
+ 	sll	$s6, $s6, 8
+ 	or	$s6, $s6, $t0			
+	
+	
 readSize:
 	addi	$v0, $0, 4  	
 	la 	$a0, sizePrompt
@@ -112,9 +128,10 @@ readSize:
  
  	# registers
  	# s0: width, s1: starting x cord, s2: starting y cord
- 	# s3: 16384 s7: pixelColor (Not changed across calls so not saved)
- 	#
- 	
+ 	# s3: 16384 const number of pixels in the grid
+ 	# s6: shiftAmount
+ 	# s7: pixelColor (Not changed across calls so not saved)
+ 
  	# save sequence
 	addi $sp, $sp, -8
     	sw $ra, 4($sp) 	# Save $ra
@@ -131,6 +148,22 @@ readSize:
 branchCase: # width >= 4
 	# t0 = counter, #t1 = t0 * 4
 	
+	ble $s7, $s6, colorUnderFlow
+	sub $s7, $s7, $s6
+	j colorDone
+	
+colorUnderFlow:
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+	add $s7, $s7, $s6
+colorDone:
+	sll $s7, $s7, 8
+	srl $s7, $s7, 8
 	
 	# t2 = lowerbound
 	add $t2, $s1, $0
