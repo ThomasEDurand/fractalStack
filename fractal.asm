@@ -41,7 +41,7 @@ main:
 	sll $s1, $s1, 8
 	or $t1, $s0, $s1
 	or $t1, $t1, $s2
-	li $s3, 16384
+	li $s5, 16384
 	
 	j drawDisplay
 	
@@ -54,7 +54,7 @@ drawDisplay:
 	mul $t3, $t0, 4
 	sw $t1, display($t3)
 	addi $t0, $t0, 1
-	bne $t0, $s3, drawDisplay
+	bne $t0, $s5, drawDisplay
 	
 	
 readSquareColors:
@@ -116,6 +116,7 @@ readSize:
  	sub $s1, $s1, $s0
  	div $s1, $s1, 2
  	add $s2, $s1, $0 # s2 = s1 on first square
+ 	add $s3, $v0, 4
  	
  	beq $s0, 1, initialWidthOne# EDGE CASE
 	
@@ -127,8 +128,12 @@ readSize:
  	beq $s0, 1, restoreReg
  
  	# registers
- 	# s0: width, s1: starting x cord, s2: starting y cord
- 	# s3: 16384 const number of pixels in the grid
+ 	# s0: width, 
+ 	# s1: starting x cord, 
+ 	# s2: starting y cord
+ 	# s3: Called from
+ 	
+ 	# s5: 16384 const number of pixels in the grid
  	# s6: shiftAmount
  	# s7: pixelColor (Not changed across calls so not saved)
  
@@ -138,15 +143,16 @@ readSize:
     	sw $fp, 0($sp) 	# Save $fp
     	addi $fp, $sp, 4 	# Set $fp
     	
-    	addi $sp, $sp, -12 	# room for $s0-$s1
-    	sw $s0, 8($sp) 		# Save $s0
-    	sw $s1, 4($sp) 		# Save $s1
-    	sw $s2, 0($sp)		# Save $s2
+    	addi $sp, $sp, -16 	# room for $s0-$s1
+    	sw $s0, 12($sp) 		# Save $s0
+    	sw $s1, 8($sp) 		# Save $s1
+    	sw $s2, 4($sp)		# Save $s2
+    	sw $s3, 0($sp)		# Save $s3
 	
 	# in leaf case jump straight to restoreReg
 	
-branchCase: # width >= 4
-	# t0 = counter, #t1 = t0 * 4
+branchCase: 	# width >= 4
+		# t0 = counter, #t1 = t0 * 4
 	
 	ble $s7, $s6, colorUnderFlow
 	sub $s7, $s7, $s6
@@ -200,59 +206,77 @@ colorDone:
 		
 		# recursive sequence
 	# jal drawSqr top left x - w/4, y - w/4
+	beq $s3, 3, skip0
+	
 	div $s0, $s0, 2
 	div $t1, $s0, 2
 	sub $s1, $s1, $t1
 	sub $s2, $s2, $t1
 	
+	addi $s3, $0, 0
 	jal drawSquare
 	
 	lw $s0, -8($fp) 	# restore $s0
     	lw $s1, -12($fp) 	# restore $s1
     	lw $s2, -16($fp)	# restore $s2
-	
+    	lw $s3, -20($fp)	# restore $s3
+skip0:
 	
 	
 	# jal drawSqr top right x + 3w/4, y - w/4
+	beq $s3, 2, skip1
+	
 	div $s0, $s0, 2
 	div $t1, $s0, 2
 	mul $t2, $t1, 3
 	add $s1, $s1, $t2
 	sub $s2, $s2, $t1
 	
+	addi $s3, $0, 1
 	jal drawSquare
 	
 	lw $s0, -8($fp) 	# restore $s0
     	lw $s1, -12($fp) 	# restore $s1
     	lw $s2, -16($fp)	# restore $s2
+    	lw $s3, -20($fp)	# restore $s3
+skip1:
 	
 
 	# jal drawSqr bottom left: x - w/4, y + 3w/4
+	beq $s3, 1, skip2
 	div $s0, $s0, 2
 	div $t1, $s0, 2
 	mul $t2, $t1, 3
 	sub $s1, $s1, $t1
 	add $s2, $s2, $t2
 	
+	addi $s3, $0, 2
 	jal drawSquare
 	
 	lw $s0, -8($fp) 	# restore $s0
     	lw $s1, -12($fp) 	# restore $s1
     	lw $s2, -16($fp)	# restore $s2
+    	lw $s3, -20($fp)	# restore $s3
+skip2:
 	
 	
 	# jal drawSqr bottom right: x + 3w/4, y + 3w/4
+	beq $s3, 0, skip3
+	
 	div $s0, $s0, 2
 	div $t1, $s0, 2
 	mul $t2, $t1, 3
 	add $s1, $s1, $t2
 	add $s2, $s2, $t2
 	
+	addi $s3, $0, 3
 	jal drawSquare
 	
 	lw $s0, -8($fp) 	# restore $s0
     	lw $s1, -12($fp) 	# restore $s1
     	lw $s2, -16($fp)	# restore $s2
+    	lw $s3, -20($fp)	# restore $s3
+skip3:
 	
 
 restoreReg:
@@ -260,6 +284,7 @@ restoreReg:
 	lw $s0, -8($fp) 	# restore $s0
     	lw $s1, -12($fp) 	# restore $s1
     	lw $s2, -16($fp)	# restore $s2
+    	lw $s3, -20($fp)	# restore $s3
 	
 	addi $sp, $fp, 4 	# Restore $sp
     	lw $ra, 0($fp) 		# Restore $ra
