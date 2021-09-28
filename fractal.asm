@@ -103,7 +103,6 @@ readShift:
  	sll	$s6, $s6, 8
  	or	$s6, $s6, $t0			
 	
-	
 readSize:
 	addi	$v0, $0, 4  	
 	la 	$a0, sizePrompt
@@ -118,7 +117,7 @@ readSize:
  	add $s2, $s1, $0 # s2 = s1 on first square
  	add $s3, $v0, 4
  	
- 	beq $s0, 1, initialWidthOne# EDGE CASE
+ 	beq $s0, 1, initialWidthOne # EDGE CASE
 	
 	jal drawSquare
 	j exit
@@ -156,18 +155,19 @@ branchCase: 	# width >= 4
 	
 	ble $s7, $s6, colorUnderFlow
 	sub $s7, $s7, $s6
-	j colorDone
+	b colorDone
 	
-colorUnderFlow:
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
-	add $s7, $s7, $s6
+	colorUnderFlow:
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
+		add $s7, $s7, $s6
 colorDone:
+
 	sll $s7, $s7, 8
 	srl $s7, $s7, 8
 	
@@ -184,6 +184,13 @@ colorDone:
 	add $t0, $t4, $0
 	add $t1, $t4, $0
 	
+	div $t8, $s0, 2	# t8 = 1.5 + w/2, x midpoint
+	add $t8, $t8, $s1 
+	
+	div $t9, $s0, 2 # t9 = s2 + w/2, y midpoint
+	add $t9, $t9, $s2
+	mul $t9, $t9, 127
+	add $t9, $t9, $t8
 	
 	printLoop:
 		sll $t1, $t0, 2
@@ -197,6 +204,33 @@ colorDone:
 		mfhi $t6
 		blt $t6, $t2, dontColor
 		bge $t6, $t3, dontColor
+		
+		#square conor condition
+		beq $s3, 0, skipQ0
+		beq $s3, 1, skipQ1
+		beq $s3, 2, skipQ2
+		beq $s3, 3, skipQ3
+		b color
+		
+		skipQ0:
+		blt $t6, $t8, color
+		blt $t0, $t9, color 
+		b dontColor
+		
+		skipQ1:
+		bge $t6, $t8, color
+		blt $t0, $t9, color 
+		b dontColor
+		
+		skipQ2:
+		blt $t6, $t8, color
+		bgt $t0, $t9, color 
+		b dontColor
+		
+		skipQ3:
+		bge $t6, $t8, color
+		bgt $t0, $t9, color 
+		b dontColor
 		
 		color:
 			sw $s7, display($t1)
@@ -222,7 +256,6 @@ colorDone:
     	lw $s3, -20($fp)	# restore $s3
 skip0:
 	
-	
 	# jal drawSqr top right x + 3w/4, y - w/4
 	beq $s3, 2, skip1
 	
@@ -241,7 +274,6 @@ skip0:
     	lw $s3, -20($fp)	# restore $s3
 skip1:
 	
-
 	# jal drawSqr bottom left: x - w/4, y + 3w/4
 	beq $s3, 1, skip2
 	div $s0, $s0, 2
@@ -258,7 +290,6 @@ skip1:
     	lw $s2, -16($fp)	# restore $s2
     	lw $s3, -20($fp)	# restore $s3
 skip2:
-	
 	
 	# jal drawSqr bottom right: x + 3w/4, y + 3w/4
 	beq $s3, 0, skip3
@@ -278,7 +309,6 @@ skip2:
     	lw $s3, -20($fp)	# restore $s3
 skip3:
 	
-
 restoreReg:
 	# restore sequence
 	lw $s0, -8($fp) 	# restore $s0
