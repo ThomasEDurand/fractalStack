@@ -83,7 +83,7 @@ readSquareColors:
 	addi	$v0, $0, 5		
 	syscall 			
  	add	$s2, $0, $v0	
- 	
+	 	
 	sll $s0, $s0, 16
 	sll $s1, $s1, 8
 	or $t1, $s0, $s1
@@ -101,7 +101,8 @@ readShift:
  	sll	$s6, $s6, 8
  	or	$s6, $s6, $t0
  	sll	$s6, $s6, 8
- 	or	$s6, $s6, $t0			
+ 	or	$s6, $s6, $t0	
+ 		
 	
 readSize:
 	addi	$v0, $0, 4  	
@@ -153,19 +154,15 @@ readSize:
 branchCase: 	# width >= 4
 		# t0 = counter, #t1 = t0 * 4
 	
+	beq $s3, 4, colorDone # keep first square the same
 	ble $s7, $s6, colorUnderFlow
 	sub $s7, $s7, $s6
 	b colorDone
 	
 	colorUnderFlow:
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
-		add $s7, $s7, $s6
+		mul $t0, $t6, 7
+		add $s7, $s7, $t0
+		
 colorDone:
 
 	sll $s7, $s7, 8
